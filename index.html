@@ -12,7 +12,7 @@
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman:wght@300;400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&display=swap');
         
         * {
             margin: 0;
@@ -21,7 +21,7 @@
         }
 
         body {
-            font-family: 'Times New Roman', serif;
+            font-family: 'Merriweather', serif;
             background-color: #ffffff;
             color: #000000;
             line-height: 1.6;
@@ -96,15 +96,23 @@
             padding: 15px;
             background: none;
             border: none;
-            font-family: 'Times New Roman', serif;
+            font-family: 'Merriweather', serif;
             font-size: 1rem;
             cursor: pointer;
             border-bottom: 2px solid transparent;
+            color: #333;  /* Color visible por defecto */
+            transition: all 0.3s ease;
+        }
+
+        .auth-tab:hover {
+            color: #000;
+            background-color: #f8f8f8;
         }
 
         .auth-tab.active {
             border-bottom-color: #000;
             font-weight: 500;
+            color: #000;
         }
 
         .user-info {
@@ -128,16 +136,23 @@
             background: none;
             border: none;
             padding: 15px 30px;
-            font-family: 'Times New Roman', serif;
+            font-family: 'Merriweather', serif;
             font-size: 1rem;
             cursor: pointer;
             border-bottom: 2px solid transparent;
             transition: all 0.3s ease;
+            color: #333;  /* Color visible por defecto */
+        }
+
+        .tab-btn:hover {
+            color: #000;
+            background-color: #f8f8f8;
         }
 
         .tab-btn.active {
             border-bottom-color: #000;
             font-weight: 500;
+            color: #000;
         }
 
         .tab-content {
@@ -177,7 +192,7 @@
             width: 100%;
             padding: 12px;
             border: 1px solid #ccc;
-            font-family: 'Times New Roman', serif;
+            font-family: 'Merriweather', serif;
             font-size: 1rem;
             background: #fafafa;
         }
@@ -187,7 +202,7 @@
             color: #fff;
             padding: 12px 30px;
             border: none;
-            font-family: 'Times New Roman', serif;
+            font-family: 'Merriweather', serif;
             font-size: 1rem;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -287,7 +302,7 @@
             padding: 8px;
             text-align: center;
             border: 1px solid #ccc;
-            font-family: 'Times New Roman', serif;
+            font-family: 'Merriweather', serif;
         }
 
         .completed-checkbox {
@@ -528,14 +543,7 @@
                 <h2>Configurar Entrenamiento</h2>
                 <div class="form-group">
                     <label for="muscleSelect">Selecciona los músculos a entrenar:</label>
-                    <select id="muscleSelect" multiple>
-                        <option value="pecho">Pecho</option>
-                        <option value="espalda">Espalda</option>
-                        <option value="hombros">Hombros</option>
-                        <option value="brazos">Brazos</option>
-                        <option value="piernas">Piernas</option>
-                        <option value="core">Core</option>
-                    </select>
+                    <select id="muscleSelect" multiple></select>
                     <small>Mantén Ctrl/Cmd presionado para seleccionar múltiples opciones</small>
                 </div>
                 <div class="form-group">
@@ -614,6 +622,14 @@
         <div id="database" class="tab-content">
             <div class="card">
                 <h2>Gestionar Base de Datos de Ejercicios</h2>
+
+                <div class="form-group" style="margin-top:15px;">
+                    <label for="newMuscleGroup">Nuevo grupo muscular:</label>
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="newMuscleGroup" placeholder="Ej: Glúteos" style="flex:1;">
+                        <button id="addMuscleGroupBtn">Añadir Grupo</button>
+                    </div>
+                </div>
                 
                 <div class="form-group">
                     <label for="newExerciseName">Nombre del ejercicio:</label>
@@ -622,14 +638,7 @@
                 
                 <div class="form-group">
                     <label for="newExerciseMuscle">Grupo muscular:</label>
-                    <select id="newExerciseMuscle">
-                        <option value="pecho">Pecho</option>
-                        <option value="espalda">Espalda</option>
-                        <option value="hombros">Hombros</option>
-                        <option value="brazos">Brazos</option>
-                        <option value="piernas">Piernas</option>
-                        <option value="core">Core</option>
-                    </select>
+                    <select id="newExerciseMuscle"></select>
                 </div>
                 
                 <button id="addExercise">Añadir Ejercicio</button>
@@ -713,6 +722,10 @@
         document.addEventListener('DOMContentLoaded', function() {
             initAuthListeners();
             initAppListeners();
+
+            // Preparar selectores con ejercicios por defecto
+            exercises = JSON.parse(JSON.stringify(defaultExercises));
+            renderMuscleSelectors();
 
             // Escuchar cambios de autenticación
             if (auth) {
@@ -911,6 +924,7 @@
                     
                     // Actualizar UI
                     renderExerciseDatabase();
+                    renderMuscleSelectors();
                     updateStats();
                     renderWorkoutHistory();
                     
@@ -920,6 +934,8 @@
                     await initializeUserData();
                     exercises = JSON.parse(JSON.stringify(defaultExercises));
                     renderExerciseDatabase();
+                    renderMuscleSelectors();
+                    renderMuscleSelectors();
                 }
             } catch (error) {
                 console.error('Error cargando datos:', error);
@@ -981,6 +997,7 @@
                     lastWorkoutDate = data.lastWorkoutDate || null;
                     
                     renderExerciseDatabase();
+                    renderMuscleSelectors();
                     updateStats();
                     renderWorkoutHistory();
                 }
@@ -1025,7 +1042,46 @@
         }
 
         // ========== FUNCIONES PRINCIPALES DE LA APP ==========
-        function initAppListeners() {
+        
+        function renderMuscleSelectors() {
+            const keys = Object.keys(exercises || {});
+            const muscleSelect = document.getElementById('muscleSelect');
+            const newExerciseMuscle = document.getElementById('newExerciseMuscle');
+
+            if (muscleSelect) {
+                muscleSelect.innerHTML = keys.map(k => 
+                    `<option value="${k}">${k.charAt(0).toUpperCase() + k.slice(1)}</option>`
+                ).join('');
+            }
+
+            if (newExerciseMuscle) {
+                newExerciseMuscle.innerHTML = keys.map(k => 
+                    `<option value="${k}">${k.charAt(0).toUpperCase() + k.slice(1)}</option>`
+                ).join('');
+            }
+        }
+
+        function addMuscleGroup() {
+            const input = document.getElementById('newMuscleGroup');
+            const name = (input?.value || '').trim();
+            if (!name) {
+                alert('Por favor, introduce un nombre para el nuevo grupo muscular');
+                return;
+            }
+            const key = name.toLowerCase();
+            if (!exercises[key]) {
+                exercises[key] = [];
+                input.value = '';
+                renderMuscleSelectors();
+                renderExerciseDatabase();
+                    renderMuscleSelectors();
+                saveUserData();
+                showSuccess('Grupo muscular añadido');
+            } else {
+                alert('Ese grupo muscular ya existe');
+            }
+        }
+function initAppListeners() {
             // Pestañas
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.addEventListener('click', function() {
@@ -1047,6 +1103,10 @@
 
             // Base de datos
             document.getElementById('addExercise').addEventListener('click', addExercise);
+        
+
+            // Añadir grupo muscular
+            document.getElementById('addMuscleGroupBtn').addEventListener('click', addMuscleGroup);
         }
 
         function switchTab(tabName) {
@@ -1309,6 +1369,7 @@
             document.getElementById('newExerciseName').value = '';
             
             renderExerciseDatabase();
+                    renderMuscleSelectors();
             saveUserData();
         }
 
@@ -1316,6 +1377,7 @@
             if (confirm(`¿Estás seguro de que quieres eliminar "${exerciseName}"?`)) {
                 exercises[muscle] = exercises[muscle].filter(ex => ex !== exerciseName);
                 renderExerciseDatabase();
+                    renderMuscleSelectors();
                 saveUserData();
             }
         }
@@ -1451,3 +1513,4 @@
     </script>
 </body>
 </html>
+        
